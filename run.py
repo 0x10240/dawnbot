@@ -1,5 +1,6 @@
 import asyncio
 import random
+import argparse
 import sys
 from typing import Callable, Coroutine, Any, List, Set
 
@@ -10,7 +11,6 @@ from models import Account
 from utils import setup
 from console import Console
 from database import initialize_database
-
 
 accounts_with_initial_delay: Set[str] = set()
 
@@ -79,7 +79,7 @@ def reset_initial_delays():
     accounts_with_initial_delay.clear()
 
 
-async def run() -> None:
+async def run(module="farm") -> None:
     await initialize_database()
     await file_operations.setup_files()
     reset_initial_delays()
@@ -91,30 +91,33 @@ async def run() -> None:
         "export_stats": (config.accounts_to_farm, process_export_stats),
     }
 
-    while True:
-        # Console().build()
-        config.module = "farm"
+    # Console().build()
+    config.module = module
 
-        if config.module not in module_map:
-            logger.error(f"Unknown module: {config.module}")
-            break
+    if config.module not in module_map:
+        logger.error(f"Unknown module: {config.module}")
+        return
 
-        accounts, process_func = module_map[config.module]
+    accounts, process_func = module_map[config.module]
 
-        if not accounts:
-            logger.error(f"No accounts for {config.module}")
-            break
+    if not accounts:
+        logger.error(f"No accounts for {config.module}")
+        return
 
-        if config.module == "farm":
-            await process_func(accounts)
-        else:
-            await run_module(accounts, process_func)
-            # input("\n\nPress Enter to continue...")
+    if config.module == "farm":
+        await process_func(accounts)
+    else:
+        await run_module(accounts, process_func)
+        # input("\n\nPress Enter to continue...")
 
 
 if __name__ == "__main__":
-    # if sys.platform == "win32":
-    #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    parser = argparse.ArgumentParser(description="Run the automation script with specified module")
+    parser.add_argument("-module", type=str, default="farm", help="Specify the module to run")
+
+    args = parser.parse_args()
+    module = args.module
 
     setup()
-    asyncio.run(run())
+
+    asyncio.run(run(module=module))
