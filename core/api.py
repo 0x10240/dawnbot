@@ -20,14 +20,14 @@ class DawnExtensionAPI:
         self.session = self.setup_session()
 
     def setup_session(self) -> AsyncSession:
-        session = AsyncSession(impersonate="chrome130", verify=False)
+        session = AsyncSession(impersonate="chrome124", verify=False)
         session.timeout = 30
         session.headers = {
             "accept": "*/*",
             "accept-language": "en-US,en;q=0.9",
             "origin": "chrome-extension://fpdkjdnhkakefebpekbdhillbhonfjjp",
             "priority": "u=1, i",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         }
 
         if self.account_data.proxy:
@@ -39,7 +39,7 @@ class DawnExtensionAPI:
         return session
 
     async def clear_request(self, url: str):
-        session = AsyncSession(impersonate="chrome130", verify=False, timeout=30)
+        session = AsyncSession(impersonate="chrome124", verify=False, timeout=30)
         session.proxies = self.session.proxies
 
         response = await session.get(url)
