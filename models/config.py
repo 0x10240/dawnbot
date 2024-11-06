@@ -7,9 +7,11 @@ from pydantic import BaseModel, PositiveInt, ConfigDict
 class Account(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    type: str = ""
     email: str
     password: str
     imap_server: str = ""
+    ip: str = ""
     proxy: Proxy
 
 

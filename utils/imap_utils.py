@@ -104,3 +104,11 @@ def search_for_link_in_spam_sync(
         mailbox.folder.set(spam_folder)
         return search_for_link_sync(mailbox, link_pattern)
     return None
+
+
+if __name__ == '__main__':
+    imap_server = "imap.rambler.ru"
+    email = "xxx@rambler.ru"
+    password = "password"
+    link = asyncio.run(check_email_for_link(imap_server, email, password))
+    print(link)

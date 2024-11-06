@@ -5,6 +5,8 @@ from loguru import logger
 from models import Config, Account
 from better_proxy import Proxy
 from typing import List, Dict, Generator
+from utils.ip_utils import fetch_proxy_ip
+from prettytable import PrettyTable
 
 CONFIG_PATH = os.path.join(os.getcwd(), "config")
 CONFIG_DATA_PATH = os.path.join(CONFIG_PATH, "data")
@@ -22,7 +24,7 @@ REQUIRED_PARAMS_FIELDS = (
 
 
 def read_file(
-    file_path: str, check_empty: bool = True, is_yaml: bool = False
+        file_path: str, check_empty: bool = True, is_yaml: bool = False
 ) -> List[str] | Dict:
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
@@ -73,6 +75,35 @@ def get_accounts(file_name: str) -> Generator[Account, None, None]:
             logger.error(f"Failed to parse account: {account}")
 
 
+def show_accounts(accounts: List[Account]) -> None:
+    table = PrettyTable()
+    table.field_names = ["Type", "Email", "Password", "Proxy", "OutboundIp"]
+    for account in accounts:
+        row = [account.type, account.email, account.password, account.proxy, account.ip]
+        table.add_row(row)
+    print(table)
+
+
+def get_yaml_accounts(account_type: str) -> [Account]:
+    data = read_file(os.path.join(CONFIG_DATA_PATH, 'accounts.yaml'), check_empty=False, is_yaml=True)
+    items = data[account_type]
+    accounts = []
+
+    for item in items:
+        proxy_str = item.get('proxy')
+        proxy_ip = fetch_proxy_ip(proxy_str)
+        account = Account(
+            type=account_type,
+            email=item.get('email', ''),
+            password=item.get('password', ''),
+            ip=proxy_ip,
+            proxy=Proxy.from_str(proxy_str)
+        )
+        accounts.append(account)
+
+    return accounts
+
+
 def validate_domains(accounts: List[Account], domains: Dict[str, str]) -> List[Account]:
     for account in accounts:
         domain = account.email.split("@")[1]
@@ -86,8 +117,10 @@ def validate_domains(accounts: List[Account], domains: Dict[str, str]) -> List[A
 
 def load_config() -> Config:
     try:
-        reg_accounts = list(get_accounts("register.txt"))
-        farm_accounts = list(get_accounts("farm.txt"))
+        reg_accounts = get_yaml_accounts("register")
+        farm_accounts = get_yaml_accounts("farm")
+
+        show_accounts(reg_accounts + farm_accounts)
 
         if not reg_accounts and not farm_accounts:
             raise ValueError("No accounts found in data files")
@@ -112,3 +145,7 @@ def load_config() -> Config:
     except Exception as exc:
         logger.error(f"Failed to load config: {exc}")
         exit(1)
+
+
+if __name__ == '__main__':
+    load_config()

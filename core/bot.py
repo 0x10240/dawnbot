@@ -81,7 +81,7 @@ class Bot(DawnExtensionAPI):
                 )
 
             logger.success(
-                f"Account: {self.account_data.email} | Link found, confirming registration..."
+                f"Account: {self.account_data.email} | Link found: {confirm_url}, confirming registration..."
             )
             response = await self.clear_request(url=confirm_url)
             if response.status_code == 200:

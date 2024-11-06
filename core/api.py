@@ -27,7 +27,7 @@ class DawnExtensionAPI:
             "accept-language": "en-US,en;q=0.9",
             "origin": "chrome-extension://fpdkjdnhkakefebpekbdhillbhonfjjp",
             "priority": "u=1, i",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
         }
 
         if self.account_data.proxy:
@@ -46,17 +46,17 @@ class DawnExtensionAPI:
         return response
 
     async def send_request(
-        self,
-        request_type: Literal["POST", "GET", "OPTIONS"] = "POST",
-        method: str = None,
-        json_data: dict = None,
-        params: dict = None,
-        url: str = None,
-        headers: dict = None,
-        cookies: dict = None,
-        verify: bool = True,
-        max_retries: int = 3,
-        retry_delay: float = 3.0,
+            self,
+            request_type: Literal["POST", "GET", "OPTIONS"] = "POST",
+            method: str = None,
+            json_data: dict = None,
+            params: dict = None,
+            url: str = None,
+            headers: dict = None,
+            cookies: dict = None,
+            verify: bool = True,
+            max_retries: int = 3,
+            retry_delay: float = 3.0,
     ):
         def verify_response(response_data: dict | list) -> dict | list:
             if "status" in str(response_data):
@@ -154,7 +154,7 @@ class DawnExtensionAPI:
 
     @staticmethod
     async def solve_puzzle(
-        image: str,
+            image: str,
     ) -> Tuple[str | int, bool, str | int] | Tuple[str, bool] | Tuple[str, bool, str]:
         response = await captcha_solver.solve(image)
         return response
@@ -202,7 +202,7 @@ class DawnExtensionAPI:
         }
 
         return await self.send_request(
-            method="/v1/puzzle/validate-register",
+            method="/v1/puzzle/validate-register?appid=undefined",
             json_data=json_data,
         )
 
@@ -290,7 +290,7 @@ class DawnExtensionAPI:
     async def login(self, puzzle_id: str, answer: str):
         current_time = datetime.now(timezone.utc)
         formatted_datetime_str = (
-            current_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+                current_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
         )
 
         params = {
