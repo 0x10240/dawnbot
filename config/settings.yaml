@@ -5,11 +5,11 @@
 # ------------
 threads: 10                    # Number of concurrent threads to run (minimum: 1)
 keepalive_interval: 120        # How often to send keepalive signal (in seconds)
-referral_code: "hegbhf"        # Your referral code for the application
+referral_code: "udzvapmi"        # Your referral code for the application
 
 # Captcha Settings
 # ---------------
-captcha_module: 2captcha       # Captcha service to use: '2captcha' or 'anticaptcha'
+captcha_module: local       # Captcha service to use: '2captcha' or 'anticaptcha'
 two_captcha_api_key: ""        # API key for 2captcha service
 anti_captcha_api_key: ""       # API key for anti-captcha service
 

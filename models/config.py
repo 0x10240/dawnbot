@@ -32,4 +32,4 @@ class Config(BaseModel):
 
     keepalive_interval: PositiveInt
     module: str = ""
-    captcha_module: Literal["2captcha", "anticaptcha"] = ""
+    captcha_module: Literal["2captcha", "anticaptcha", "local"] = ""

@@ -92,7 +92,8 @@ async def run() -> None:
     }
 
     while True:
-        Console().build()
+        # Console().build()
+        config.module = "farm"
 
         if config.module not in module_map:
             logger.error(f"Unknown module: {config.module}")
@@ -108,12 +109,12 @@ async def run() -> None:
             await process_func(accounts)
         else:
             await run_module(accounts, process_func)
-            input("\n\nPress Enter to continue...")
+            # input("\n\nPress Enter to continue...")
 
 
 if __name__ == "__main__":
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    # if sys.platform == "win32":
+    #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     setup()
     asyncio.run(run())
