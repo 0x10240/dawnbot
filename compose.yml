@@ -1,0 +1,16 @@
+services:
+
+  dawn_bot:
+    build: .
+    image: dawn-bot
+    container_name: dawn_bot_container
+    volumes:
+      - ./config/data/accounts.yaml:/app/config/data/accounts.yaml
+    working_dir: /app
+    command: ["python", "run.py"]
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"
