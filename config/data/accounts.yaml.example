@@ -1,0 +1,8 @@
+farm:
+  - email: account
+    password: password
+    proxy: socks5://proxy:port
+register:
+  - email: account
+    password: password
+    proxy: socks5://proxy:port
