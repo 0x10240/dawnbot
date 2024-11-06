@@ -52,6 +52,16 @@
    pip install -r requirements.txt
    ```
 
+4. Install requiresh dependences on linux:
+```bash
+apt install -y libgl1 libgomp1
+```
+
+5. run bot
+```angular2html
+python run.py -module=farm
+```
+
 ---
 
 ## ⚙️ Configuration

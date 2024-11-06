@@ -20,7 +20,7 @@ class DawnExtensionAPI:
         self.session = self.setup_session()
 
     def setup_session(self) -> AsyncSession:
-        session = AsyncSession(impersonate="chrome124", verify=False)
+        session = AsyncSession(impersonate="chrome130", verify=False)
         session.timeout = 30
         session.headers = {
             "accept": "*/*",
@@ -39,7 +39,7 @@ class DawnExtensionAPI:
         return session
 
     async def clear_request(self, url: str):
-        session = AsyncSession(impersonate="chrome124", verify=False, timeout=30)
+        session = AsyncSession(impersonate="chrome130", verify=False, timeout=30)
         session.proxies = self.session.proxies
 
         response = await session.get(url)
