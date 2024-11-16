@@ -32,7 +32,9 @@ def fetch_proxy_ip(proxy_str=None):
         logger.error(f'fetch proxy: {proxy_str} ip failed, err: {e}')
         return ''
 
-    return m.group(1) if m else ''
+    ret = m.group(1) if m else ''
+    logger.debug(f'proxy: {proxy_str} outbound ip: {ret}')
+    return ret
 
 async def async_fetch_proxy_ip(proxy_str=None):
     headers = {
@@ -58,6 +60,6 @@ async def async_fetch_proxy_ip(proxy_str=None):
         return ''
 
 if __name__ == '__main__':
-    proxy_str = 'http://192.168.50.88:40042'
+    proxy_str = 'http://192.168.50.151:40042'
     ip = fetch_proxy_ip(proxy_str)
     print(ip)

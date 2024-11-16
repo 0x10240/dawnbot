@@ -1,1 +1,1 @@
-from .accounts import Accounts
+from .accounts_redis import Accounts

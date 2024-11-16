@@ -189,9 +189,10 @@ class DawnExtensionAPI:
         return response.get("imgBase64")
 
     async def register(self, puzzle_id: str, answer: str) -> dict:
+        name = names.get_first_name()
         json_data = {
-            "firstname": names.get_first_name(),
-            "lastname": names.get_last_name(),
+            "firstname": name,
+            "lastname": name,
             "email": self.account_data.email,
             "mobile": "",
             "password": self.account_data.password,
@@ -200,6 +201,11 @@ class DawnExtensionAPI:
             "puzzle_id": puzzle_id,
             "ans": answer,
         }
+        #
+        # option_resp = await self.send_request(
+        #     url=f"{self.API_URL}/v1/puzzle/validate-register?appid=undefined",
+        #     request_type="OPTIONS",
+        # )
 
         return await self.send_request(
             method="/v1/puzzle/validate-register?appid=undefined",

@@ -3,18 +3,20 @@ from typing import Tuple, Any, Optional
 
 import pytz
 from loguru import logger
+
 from loader import config, file_operations
 from models import Account, OperationResult, StatisticData
 
 from .api import DawnExtensionAPI
 from utils import check_email_for_link, check_if_email_valid
-from database import Accounts
+from database import Accounts as AccountDb
 from .exceptions.base import APIError, SessionRateLimited, CaptchaSolvingFailed
 
 
 class Bot(DawnExtensionAPI):
     def __init__(self, account: Account):
         super().__init__(account)
+        self.account_db = AccountDb()
 
     async def get_captcha_data(self) -> Tuple[str, Any, Optional[Any]]:
         for _ in range(5):
@@ -56,8 +58,8 @@ class Bot(DawnExtensionAPI):
         raise CaptchaSolvingFailed("Failed to solve captcha after 5 attempts")
 
     async def clear_account_and_session(self) -> None:
-        if await Accounts.get_account(email=self.account_data.email):
-            await Accounts.delete_account(email=self.account_data.email)
+        if await self.account_db.get_account(email=self.account_data.email):
+            await self.account_db.delete_account(email=self.account_data.email)
         self.session = self.setup_session()
 
     async def process_reverify_email(self) -> OperationResult:
@@ -109,15 +111,14 @@ class Bot(DawnExtensionAPI):
             status=False,
         )
 
-
     async def process_registration(self) -> OperationResult:
         task_id = None
 
         try:
             if not await check_if_email_valid(
-                self.account_data.imap_server,
-                self.account_data.email,
-                self.account_data.password,
+                    self.account_data.imap_server,
+                    self.account_data.email,
+                    self.account_data.password,
             ):
                 logger.error(f"Account: {self.account_data.email} | Invalid email")
                 return OperationResult(
@@ -213,7 +214,7 @@ class Bot(DawnExtensionAPI):
 
     async def process_farming(self) -> None:
         try:
-            db_account_data = await Accounts.get_account(email=self.account_data.email)
+            db_account_data = await self.account_db.get_account(email=self.account_data.email)
 
             if db_account_data and db_account_data.session_blocked_until:
                 if await self.handle_sleep(db_account_data.session_blocked_until):
@@ -246,7 +247,7 @@ class Bot(DawnExtensionAPI):
 
     async def process_get_user_info(self) -> StatisticData:
         try:
-            db_account_data = await Accounts.get_account(email=self.account_data.email)
+            db_account_data = await self.account_db.get_account(email=self.account_data.email)
 
             if db_account_data and db_account_data.session_blocked_until:
                 if await self.handle_sleep(db_account_data.session_blocked_until):
@@ -290,7 +291,7 @@ class Bot(DawnExtensionAPI):
 
     async def process_complete_tasks(self) -> OperationResult:
         try:
-            db_account_data = await Accounts.get_account(email=self.account_data.email)
+            db_account_data = await self.account_db.get_account(email=self.account_data.email)
             if db_account_data is None:
                 if not await self.login_new_account():
                     return OperationResult(
@@ -325,69 +326,85 @@ class Bot(DawnExtensionAPI):
 
     async def login_new_account(self):
         task_id = None
+        email = self.account_data.email
+
+        fail_count = await self.account_db.get_fail_count(email)
+        if fail_count >= 10:
+            logger.error(f"account, login fail count: {fail_count}")
+            return False
 
         try:
-            logger.info(f"Account: {self.account_data.email} | Logging in...")
+            logger.info(f"Account: {email} | Logging in...")
             puzzle_id, answer, task_id = await self.get_captcha_data()
 
             await self.login(puzzle_id, answer)
-            logger.info(f"Account: {self.account_data.email} | Successfully logged in")
+            logger.info(f"Account: {email} | Successfully logged in")
 
-            await Accounts.create_account(
-                email=self.account_data.email, headers=self.session.headers
+            await self.account_db.create_account(
+                email=email,
+                headers=self.session.headers,
+                proxy=self.account_data.proxy.as_url,
             )
+
+            await self.account_db.set_fail_count(email, 0)
             return True
 
         except APIError as error:
+            await self.account_db.set_fail_count(email, fail_count + 1)
+
             if error.error_message in error.BASE_MESSAGES:
                 if error.error_message == "Incorrect answer. Try again!":
                     logger.warning(
-                        f"Account: {self.account_data.email} | Captcha answer incorrect, re-solving..."
+                        f"Account: {email} | Captcha answer incorrect, re-solving..."
                     )
                     if task_id:
                         await self.report_invalid_puzzle(task_id)
 
                 elif error.error_message == "Email not verified , Please check spam folder incase you did not get email":
                     logger.error(
-                        f"Account: {self.account_data.email} | Email not verified, run registration process again"
+                        f"Account: {email} | Email not verified, run registration process again"
                     )
 
-                    await file_operations.export_unverified_email(self.account_data.email, self.account_data.password)
+                    await file_operations.export_unverified_email(email, self.account_data.password)
                     for account in config.accounts_to_farm:
-                        if account.email == self.account_data.email:
+                        if account.email == email:
                             config.accounts_to_farm.remove(account)
 
                     return False
 
                 else:
                     logger.warning(
-                        f"Account: {self.account_data.email} | Captcha expired, re-solving..."
+                        f"Account: {email} | Captcha expired, re-solving..."
                     )
 
                 return await self.login_new_account()
 
             logger.error(
-                f"Account: {self.account_data.email} | Failed to login: {error}"
+                f"Account: {email} | Failed to login: {error}, fail count: {fail_count}"
             )
             return False
 
         except CaptchaSolvingFailed:
+            await self.account_db.set_fail_count(email, fail_count + 1)
+
             sleep_until = self.get_sleep_until()
-            await Accounts.set_sleep_until(self.account_data.email, sleep_until)
+            await self.account_db.set_sleep_until(email, sleep_until)
             logger.error(
-                f"Account: {self.account_data.email} | Failed to solve captcha after 5 attempts, sleeping..."
+                f"Account: {email} | Failed to solve captcha after 5 attempts, sleeping..."
             )
             return False
 
         except Exception as error:
+            await self.account_db.set_fail_count(email, fail_count + 1)
+
             logger.error(
-                f"Account: {self.account_data.email} | Failed to login: {error}"
+                f"Account: {email} | Failed to login: {error}, fail count: {fail_count}"
             )
             return False
 
     async def handle_existing_account(self, db_account_data) -> bool | None:
         if db_account_data.sleep_until and await self.handle_sleep(
-            db_account_data.sleep_until
+                db_account_data.sleep_until
         ):
             return False
 
@@ -409,7 +426,7 @@ class Bot(DawnExtensionAPI):
             f"Account: {self.account_data.email} | Session rate-limited | Sleeping..."
         )
         sleep_until = self.get_sleep_until(blocked=True)
-        await Accounts.set_session_blocked_until(self.account_data.email, sleep_until)
+        await self.account_db.set_session_blocked_until(self.account_data.email, sleep_until)
 
     async def handle_sleep(self, sleep_until):
         current_time = datetime.now(pytz.UTC)
@@ -443,6 +460,7 @@ class Bot(DawnExtensionAPI):
             logger.info(
                 f"Account: {self.account_data.email} | Total points earned: {user_info['rewardPoint']['points']}"
             )
+            await self.account_db.set_account_point(self.account_data.email, user_info['rewardPoint']['points'])
 
         except Exception as error:
             logger.error(
@@ -451,6 +469,6 @@ class Bot(DawnExtensionAPI):
 
         finally:
             new_sleep_until = self.get_sleep_until()
-            await Accounts.set_sleep_until(
+            await self.account_db.set_sleep_until(
                 email=self.account_data.email, sleep_until=new_sleep_until
             )

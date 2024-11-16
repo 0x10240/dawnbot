@@ -80,7 +80,7 @@ def reset_initial_delays():
 
 
 async def run(module="farm") -> None:
-    await initialize_database()
+    # await initialize_database()
     await file_operations.setup_files()
     reset_initial_delays()
 

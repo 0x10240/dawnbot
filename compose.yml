@@ -1,13 +1,13 @@
 services:
 
-  dawn_bot:
+  dawn_bot_1_10:
     build: .
     image: dawn-bot
-    container_name: dawn_bot_container
+    container_name: dawn_bot_container_1_50
     volumes:
-      - ./config/data/accounts.yaml:/app/config/data/accounts.yaml
+      - ./config/data/accounts_1_50.yaml:/app/config/data/accounts.yaml
     working_dir: /app
-    command: ["python", "run.py"]
+    command: ["python", "run.py", "-module=farm"]
     restart: always
     logging:
       driver: "json-file"

@@ -15,6 +15,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # 复制项目的其余代码
 COPY . .
 
-COPY .paddleocr /root/.paddleocr
-
 CMD ["python", "run.py"]

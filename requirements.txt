@@ -24,3 +24,4 @@ paddlepaddle
 requests
 prettytable
 pysocks
+redis
